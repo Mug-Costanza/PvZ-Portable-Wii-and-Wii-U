@@ -31,6 +31,7 @@
 #include "Lawn/Cutscene.h"
 #include "GameConstants.h"
 #include "Lawn/Challenge.h"
+#include "Lawn/CursorObject.h"
 #include "Lawn/ZenGarden.h"
 #include "Sexy.TodLib/Trail.h"
 #include "Lawn/System/Music.h"
@@ -1254,6 +1255,42 @@ void BetaSubmitFunc()
 */
 
 // GOTY @Patoke: 0x454C60
+#ifdef __wii__
+// Co-op (see SexyAppBase): whoever picks something up - a seed packet, the
+// shovel, a Zen Garden tool - keeps the game's mouse until they use or drop
+// it. The hammer in Whack a Zombie is everyone's.
+bool LawnApp::WiiCoopCanChangePlayer()
+{
+	if (mBoard == nullptr)
+		return true;
+	CursorType aCursor = mBoard->mCursorObject->mCursorType;
+	return aCursor == CursorType::CURSOR_TYPE_NORMAL || aCursor == CursorType::CURSOR_TYPE_HAMMER;
+}
+
+// Meanwhile the other players can still collect sun and coins.
+void LawnApp::WiiCoopAssistClick(int theX, int theY)
+{
+	if (mBoard == nullptr || mBoard->mPaused || mGameScene != GameScenes::SCENE_PLAYING)
+		return;
+
+	int x = theX - mBoard->mX;
+	int y = theY - mBoard->mY;
+	Coin* aCoin = nullptr;
+	Coin* aTopCoin = nullptr;
+	while (mBoard->IterateCoins(aCoin))
+	{
+		// Picking up a seed packet would take over the active player's cursor.
+		if (aCoin->mType == CoinType::COIN_USABLE_SEED_PACKET)
+			continue;
+		HitResult aHitResult;
+		if (aCoin->MouseHitTest(x, y, &aHitResult) && (aTopCoin == nullptr || aCoin->mRenderOrder >= aTopCoin->mRenderOrder))
+			aTopCoin = aCoin;
+	}
+	if (aTopCoin != nullptr)
+		aTopCoin->MouseDown(x, y, 1);
+}
+#endif
+
 void LawnApp::Init()
 {
 	DoParseCmdLine();

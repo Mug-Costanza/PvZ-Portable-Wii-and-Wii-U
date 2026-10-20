@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<app version="1">
+	<name>PvZ Portable</name>
+	<coder>wszqkzqk, Mug-Costanza</coder>
+	<version>1.1.0</version>
+	<release_date>20261001000000</release_date>
+	<short_description>Plants vs. Zombies GOTY reimplementation</short_description>
+	<long_description>A community-driven reimplementation of Plants vs. Zombies: Game of the Year Edition.
+
+This package does NOT include any game assets. Copy main.pak and the properties/ folder from your own legally purchased copy of PvZ GOTY Edition into sd:/apps/PvZPortable/.
+
+The game must be installed on the SD card; it always loads its data and saves from sd:/apps/PvZPortable/.
+
+Source: github.com/Mug-Costanza/PvZ-Portable-Wii-U
+Based on: github.com/wszqkzqk/PvZ-Portable</long_description>
+</app>

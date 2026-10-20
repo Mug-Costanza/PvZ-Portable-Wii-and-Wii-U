@@ -1742,6 +1742,11 @@ static void UpdateScreenSaverInfo(uint32_t theTick)
 	// Screen saver info not needed
 }
 
+#ifdef __wii__
+void WiiDrawPlayerCursors(Graphics& g, SexyAppBase* theApp); // platform/default/Input.cpp
+int WiiPlayer1CursorNum(SexyAppBase* theApp, int theCursorNum); // same
+#endif
+
 bool SexyAppBase::DrawDirtyStuff()
 {
 	SEXY_AUTO_PERF("SexyAppBase::DrawDirtyStuff");
@@ -1824,6 +1829,13 @@ bool SexyAppBase::DrawDirtyStuff()
 			if (mPlayingDemoBuffer)
 				g.DrawImage(gDemoTimeLeftImage,mWidth-gDemoTimeLeftImage->GetWidth()-10,mHeight-gFPSImage->GetHeight()-gDemoTimeLeftImage->GetHeight()-15);
 		}
+
+#ifdef __wii__
+		{
+			Graphics g(mGLInterface->GetScreenImage());
+			WiiDrawPlayerCursors(g, this);
+		}
+#endif
 
 		uint32_t aPreScreenBltTime = SDL_GetTicks();
 		mLastDrawTick = aPreScreenBltTime;
@@ -2455,6 +2467,9 @@ void SexyAppBase::ResetCustomCursorCache()
 void SexyAppBase::EnforceCursor()
 {
 	int aCursorNum = mSEHOccured ? CURSOR_POINTER : mCursorNum;
+#ifdef __wii__
+	aCursorNum = WiiPlayer1CursorNum(this, aCursorNum);
+#endif
 	if (aCursorNum < 0 || aCursorNum >= NUM_CURSORS)
 		aCursorNum = CURSOR_POINTER;
 
@@ -2938,7 +2953,7 @@ bool SexyAppBase::UpdateAppStep(bool* updated)
 
 #ifdef __wii__
 extern volatile unsigned gWiiDebugHeartbeat; // [wii-debug] see main.cpp
-void WiiUpdateControllerCursor(); // platform/default/Input.cpp
+void WiiUpdatePlayerCursors(); // platform/default/Input.cpp
 
 // [wii-debug] Where the memory goes: CPU-side image buffers vs GX textures
 // vs decoded sounds. Main thread only. theTryLock: don't block on the image
@@ -3012,7 +3027,13 @@ bool SexyAppBase::UpdateApp()
 	{
 #ifdef __wii__
 		gWiiDebugHeartbeat++;
-		WiiUpdateControllerCursor();
+		// Only once the queue is drained: each step in the messages stage
+		// handles a single event, and warping the cursor queues a new motion
+		// event, so moving it every step would keep the queue from ever
+		// emptying and the game would never get to Process() while a stick
+		// or d-pad is held.
+		if (mUpdateAppState != UPDATESTATE_MESSAGES)
+			WiiUpdatePlayerCursors();
 		if (mGLInterface != nullptr)
 			mGLInterface->ProcessQueuedTextureUploads(8);
 		{

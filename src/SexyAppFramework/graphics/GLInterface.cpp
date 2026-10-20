@@ -1217,6 +1217,42 @@ void GLInterface::Remove3DData(MemoryImage* theImage)
 
 GLImage* GLInterface::GetScreenImage() { return mScreenImage; }
 
+#ifdef __wii__
+static int gWiiDrawableWidth = 0, gWiiDrawableHeight = 0; // set by UpdateViewport
+
+// Nothing draws outside mPresentationRect, and the EFB isn't cleared between
+// frames (see Flush), so the pointer SDL draws into the overscan bars at each
+// swap would stay there, leaving a trail. Clear just the bars before every
+// swap; the picture itself is left alone.
+static void WiiClearBorders(const Rect& thePicture)
+{
+	const int w = gWiiDrawableWidth, h = gWiiDrawableHeight;
+	if (w <= 0 || h <= 0)
+		return;
+
+	// Full-screen viewport so OpenGX's clear quad covers the bars; scissor
+	// rects use GL's bottom-left origin.
+	const Rect aBars[4] = {
+		Rect(0, 0, w, h - thePicture.mY - thePicture.mHeight),	// bottom
+		Rect(0, h - thePicture.mY, w, thePicture.mY),			// top
+		Rect(0, 0, thePicture.mX, h),							// left
+		Rect(thePicture.mX + thePicture.mWidth, 0, w - thePicture.mX - thePicture.mWidth, h), // right
+	};
+	glViewport(0, 0, w, h);
+	glEnable(GL_SCISSOR_TEST);
+	glClearColor(0, 0, 0, 1);
+	for (const Rect& aBar : aBars)
+	{
+		if (aBar.mWidth <= 0 || aBar.mHeight <= 0)
+			continue;
+		glScissor(aBar.mX, aBar.mY, aBar.mWidth, aBar.mHeight);
+		glClear(GL_COLOR_BUFFER_BIT);
+	}
+	glDisable(GL_SCISSOR_TEST);
+	glViewport(thePicture.mX, thePicture.mY, thePicture.mWidth, thePicture.mHeight);
+}
+#endif
+
 void GLInterface::UpdateViewport()
 {
 	int vx = 0, vy = 0, vw, vh;
@@ -1230,6 +1266,19 @@ void GLInterface::UpdateViewport()
 
 	vw = width; vh = height;
 
+#ifdef __wii__
+	// TVs overscan: a real set crops the outermost few percent of the picture
+	// (Dolphin shows all of it). libogc's video modes already leave a border
+	// left and right (640 of the ~704 visible columns) but use every line, so
+	// the seed bank and the bottom row were cut off. Inset top and bottom by
+	// the same proportion, which also makes the picture a true 4:3 again.
+	// Mouse input follows through mPresentationRect.
+	constexpr int kOverscanNum = 22, kOverscanDen = 480;	// per edge
+	vy = height * kOverscanNum / kOverscanDen;
+	vh = height - vy * 2;
+	gWiiDrawableWidth = width;
+	gWiiDrawableHeight = height;
+#else
 	// Letterbox to 4:3
 	if (width * 3 > height * 4)
 	{
@@ -1241,6 +1290,7 @@ void GLInterface::UpdateViewport()
 		vh = width * 3 / 4;
 		vy = (height - vh) / 2;
 	}
+#endif
 
 	glViewport(vx, vy, vw, vh);
 	mPresentationRect = Rect(vx, vy, vw, vh);
@@ -1346,6 +1396,9 @@ bool GLInterface::PreDraw()
 void GLInterface::Flush()
 {
 	gNumVertices = 0;
+#ifdef __wii__
+	WiiClearBorders(mPresentationRect);
+#endif
 #ifdef __SWITCH__
 	eglSwapBuffers(mApp->mWindow, mApp->mSurface);
 #else

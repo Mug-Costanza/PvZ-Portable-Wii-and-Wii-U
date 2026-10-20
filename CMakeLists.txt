@@ -367,6 +367,12 @@ elseif(WII)
 		# whole, every symbol it provides is already defined and nothing is
 		# pulled from it.)
 		-Wl,--whole-archive $<TARGET_FILE:pvz_opengx> -Wl,--no-whole-archive
+		# Route SDL's WPAD_Data calls through our wrapper, which hides the
+		# pointers of Wiimotes 2-4 from SDL's mouse (see WiiPointer.cpp).
+		-Wl,--wrap=WPAD_Data
+		# Give each Wiimote's command queue its own buffer; libogc's don't all
+		# fit in its workspace heap, which broke the fourth Wiimote.
+		-Wl,--wrap=wiiuse_init_cmd_queue
 		ogc
 		m
 		${VORBIS_LIB}

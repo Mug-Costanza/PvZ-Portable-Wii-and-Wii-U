@@ -98,7 +98,34 @@ StyleCopReport.xml
 *.svclog
 *.scc
 
-# Chutzpah Test files
+# Vim swap files (current buffer, hidden, and directory-wide)
+.*.sw[a-p]
+*.sw[a-p]
+*.swo
+*.swp
+*.swn
+*.swm
+
+# Neovim swap files
+[._]*.swn
+[._]*.swo
+[._]*.swp
+
+# Vim backup and temp files
+*~
+*.bak
+*.orig
+
+# Vim persistent undo history
+*.un~
+.*.un~
+
+# Vim session and state files
+Session.vim
+Sessionx.vim
+.netrwhist
+
+# Vim chutzpah Test files
 _Chutzpah*
 
 # Visual C++ cache files
@@ -419,3 +446,10 @@ build-*/
 # Copyrighted files
 properties
 main.pak
+PvZ-Portable-Wii-v*-PERSONAL.zip
+
+# Build output and release packages (attach zips to GitHub Releases instead)
+build_wii/
+build_wiiu/
+apps/
+*.zip

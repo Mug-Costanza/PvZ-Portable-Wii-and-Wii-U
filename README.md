@@ -60,6 +60,7 @@ This project supports the following platforms (including but not limited to):
 | Web (WASM)      | Browser IndexedDB (saves); resources uploaded at runtime    | Works (requires a HTTP server) |
 | Nintendo Switch | sdmc:/switch/PvZPortable | Works on real hardware. Kenji-NX crashes on boot.                           |
 | Nintendo 3DS    | sdmc:/3ds/PvZPortable    | Might not have enough memory for Old 3DS and barely work on New 3DS (discontionued) |
+| Wii             | sd:/apps/PvZPortable     | Works on real hardware via the Homebrew Channel. Later levels are less tested; music needs pre-rendering (see below) |
 
 To play the game, you need the game data from PvZ GOTY. Place `main.pak` and the `properties/` folder next to the `pvz-portable` executable (the game will search for resources relative to the executable's directory). You can also use extracted data instead of `main.pak` if you prefer.
 
@@ -120,6 +121,62 @@ The app's Documents folder is exposed via iTunes/Finder file sharing and the iOS
 - Requires iOS 15.0+ (arm64).
 - Free Apple ID signatures expire after 7 days; TrollStore installs are permanent.
 - Same touch-to-mouse mapping and aspect ratio behavior as the Android port.
+
+### Special Instructions for Wii (Homebrew)
+
+Download `PvZ-Portable-Wii-vX.Y.Z.zip` from this fork's [Releases](https://github.com/Mug-Costanza/PvZ-Portable-Wii-U/releases) page. The package contains **only** the homebrew app (`boot.dol`, `meta.xml`, `icon.png`) — **no game assets are included**. You need your own legally purchased copy of Plants vs. Zombies: GOTY Edition.
+
+#### Requirements
+
+- A Wii (or Wii U in vWii mode) with the [Homebrew Channel](https://wii.hacks.guide/) installed.
+- An SD card (SD or SDHC, FAT32). The game always loads its data and saves from `sd:/apps/PvZPortable/`, even when launched from a USB loader.
+
+#### Installation
+
+1. Extract the release zip and copy the `apps` folder to the **root** of your SD card.
+2. From your PvZ GOTY install, copy `main.pak` and the `properties/` folder into `sd:/apps/PvZPortable/`.
+3. *(Optional, for music)* The Wii can't render the game's tracker music in real time, so pre-render it on a computer:
+   ```sh
+   # needs libopenmpt and libvorbis, e.g. `brew install libopenmpt libvorbis pkg-config`
+   tools/wii-music/render.sh /path/to/main.pak
+   ```
+   Copy the resulting `prerendered` folder to `sd:/apps/PvZPortable/sounds/prerendered/`.
+4. Insert the SD card and launch **PvZ Portable** from the Homebrew Channel (WiiFlow's homebrew view and USB Loader GX also work).
+
+Finished SD card layout:
+
+```
+sd:/apps/PvZPortable/
+├── boot.dol
+├── meta.xml
+├── icon.png
+├── main.pak               <- from your copy of the game
+├── properties/            <- from your copy of the game
+├── sounds/prerendered/    <- optional, from render.sh
+└── save/                  <- created by the game
+```
+
+#### Controls
+
+- **Wii Remote**: point at the screen, **A** clicks, **B** cancels / right-clicks. Held sideways, the D-pad moves the cursor, **2** clicks and **1** cancels.
+- **Nunchuk**: stick moves the cursor, **Z** clicks, **C** cancels.
+- **Classic Controller / GameCube controller**: stick or D-pad moves the cursor, **A** clicks, **B** cancels.
+- **+ / Start**: pause menu.
+
+#### Co-op (up to 4 players)
+
+Every connected controller gets its own cursor (player 2 red, 3 green, 4 yellow; Wii Remote N or GameCube port N is player N). Anyone can click anything. Whoever picks up a seed packet, the shovel or a tool keeps it until they use or drop it, while the others can still collect sun and coins.
+
+#### Building for Wii
+
+Install [devkitPro](https://devkitpro.org/wiki/Getting_Started) with the `wii-dev` group and the Wii SDL2 portlibs, then:
+
+```sh
+cmake -B build_wii -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Wii.cmake -DCMAKE_BUILD_TYPE=Release
+cmake --build build_wii
+```
+
+Rename `build_wii/pvz-portable.dol` to `boot.dol` and put it in `apps/PvZPortable/` along with `wii/meta.xml` and `wii/icon.png`.
 
 ### Play in Your Browser (WebAssembly)
 

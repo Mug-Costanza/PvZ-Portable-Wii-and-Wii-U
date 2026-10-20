@@ -213,6 +213,10 @@ public:
 	virtual void					ModalClose();
 	virtual void					PreDisplayHook();
 	virtual bool					ChangeDirHook(const char* theIntendedPath);
+#ifdef __wii__
+	virtual bool					WiiCoopCanChangePlayer();
+	virtual void					WiiCoopAssistClick(int theX, int theY);
+#endif
 	virtual bool					NeedRegister();
 	virtual void					UpdateRegisterInfo();
 	virtual void					ButtonPress(int theId);

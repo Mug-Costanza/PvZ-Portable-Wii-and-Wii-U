@@ -500,6 +500,15 @@ public:
 	virtual bool			KillDialog(int theDialogId);
 	virtual bool			KillDialog(Dialog* theDialog);
 	virtual int				GetDialogCount();
+#ifdef __wii__
+	// Co-op with several Wiimotes (platform/default/Input.cpp), in game
+	// coordinates: whether another player may take over the game's mouse from
+	// the active one, and what their click does when they may not.
+	virtual bool			WiiCoopCanChangePlayer() { return true; }
+	virtual void			WiiCoopAssistClick(int theX, int theY) { (void)theX; (void)theY; }
+	// Re-applies the cursor, e.g. after another player became active.
+	void					WiiRefreshCursor() { EnforceCursor(); }
+#endif
 	virtual void			ModalOpen();
 	virtual void			ModalClose();	
 	virtual void			DialogButtonPress(int theDialogId, int theButtonId);
